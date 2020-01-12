@@ -1,0 +1,58 @@
+
+Code listing for:ZAASR0010_POV01
+Description:Include ZAASR0010_POV01
+*&---------------------------------------------------------------------*
+*& Include          ZAASR0010_POV01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  CREATE_DATE  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE CREATE_DATE INPUT.
+
+DATA : LT_UPDATE LIKE TABLE OF DYNPREAD WITH HEADER LINE,
+LV_DATE TYPE WORKFLDS-GKDAY.
+
+CALL FUNCTION 'F4_DATE'
+EXPORTING
+DATE_FOR_FIRST_MONTH = SY-DATUM
+*     DISPLAY                            = ' '
+*     FACTORY_CALENDAR_ID                = ' '
+*     GREGORIAN_CALENDAR_FLAG            = ' '
+*     HOLIDAY_CALENDAR_ID                = ' '
+*     PROGNAME_FOR_FIRST_MONTH           = ' '
+*     DATE_POSITION                      = ' '
+IMPORTING
+SELECT_DATE = LV_DATE
+*     SELECT_WEEK                        =
+*     SELECT_WEEK_BEGIN                  =
+*     SELECT_WEEK_END                    =
+.
+IF SY-SUBRC EQ 0.
+GS_ASDET-ASEND = LV_DATE.
+ENDIF.
+
+IF GS_ASDET-ASEND NE 0.
+GV_ASEND = GS_ASDET-ASEND.
+ELSE.
+GS_ASDET-ASEND = GV_ASEND.
+ENDIF.
+
+LT_UPDATE-FIELDNAME = 'GS_ASDET-ASEND'.
+LT_UPDATE-FIELDVALUE = GS_ASDET-ASEND.
+APPEND LT_UPDATE.
+
+CALL FUNCTION 'DYNP_VALUES_UPDATE'
+EXPORTING
+DYNAME = SY-CPROG
+DYNUMB = SY-DYNNR
+TABLES
+DYNPFIELDS = LT_UPDATE
+.
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+ENDMODULE.
+Extracted by Mass Download version1.5.2 - E.G.Mellodew. 1998-2019. Sap Release753

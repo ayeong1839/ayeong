@@ -1,0 +1,82 @@
+
+Table:ZAAST0010
+Description:A/S 접수 내역 데이터
+Row	Field name	Position	Key	Data element	Domain	Datatype	Length	Lowercase	Domain text
+1	MANDT	1	X	MANDT	MANDT	CLNT	3	 	클라이언트
+2	RNUMB	2	X	ZAE_RNUMB	ZAD_RNUMB	NUMC	5	 	접수번호
+3	RDATE	3	 	ZAE_RDATE	ZAD_RDATE	DATS	8	 	접수일자
+4	RTYPE	4	 	ZAE_RTYPE	ZAD_RTYPE	CHAR	10	 	접수내역
+5	RTEXT	5	 	ZAE_RTEXT	ZAD_RTEXT	CHAR	200	 	접수내용
+6	ASSTT	6	 	ZAE_ASSTT	ZAD_ASSTT	DATS	8	 	A/S시작일자
+7	ASEND	7	 	ZAE_ASEND	ZAD_ASEND	DATS	8	 	A/S종료일자
+8	HNUMB	8	 	ZAE_HNUMB	ZAD_HNUMB	NUMC	6	 	하우스 번호
+9	CNUMB	9	 	ZAE_CNUMB	ZAD_CNUMB	NUMC	5	 	고객번호
+10	ASNUM	10	 	ZAE_ASNUM	ZAD_ENUMB	NUMC	4	 	A/S기사사번
+11	RENUM	11	 	ZAE_RENUM	ZAD_ENUMB	NUMC	4	 	영업사원사번
+12	RSTAT	12	 	ZAE_RSTAT	ZAD_RSTAT	CHAR	5	 	A/S 상태
+13	DELFL	13	 	ZAE_DELFL	FLAG	CHAR	1	 	삭제플래그
+Fixed Domain Values
+Domain Name	Value Low	Value High	Text
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RSTAT	1	 	접수
+ZAD_RSTAT	2	 	시작대기
+ZAD_RSTAT	3	 	처리중
+ZAD_RSTAT	4	 	완료대기
+ZAD_RSTAT	5	 	완료
+ZAD_RTYPE	1	 	프레임
+ZAD_RTYPE	2	 	외벽
+ZAD_RTYPE	3	 	배관
+ZAD_RTYPE	4	 	전선
+ZAD_RTYPE	5	 	센서
+ZAD_RSTAT	1	 	접수
+ZAD_RSTAT	2	 	시작대기
+ZAD_RSTAT	3	 	처리중
+ZAD_RSTAT	4	 	완료대기
+ZAD_RSTAT	5	 	완료
+FLAG	X	 	플래그 설정(이벤트가 발생함)
+FLAG	 	 	플래그가 설정되지 않음
+Extracted by Mass Download version1.5.2 - E.G.Mellodew. 1998-2019. Sap Release753

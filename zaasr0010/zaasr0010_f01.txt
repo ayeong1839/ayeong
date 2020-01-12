@@ -1,0 +1,517 @@
+
+Code listing for:ZAASR0010_F01
+Description:Include ZAASR0010_F01
+*&---------------------------------------------------------------------*
+*& Include          ZAASR0010_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form SEARCH
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM SEARCH .
+"DATA
+DATA : LT_RTDOM TYPE TABLE OF DD07V WITH HEADER LINE.
+DATA : LT_RSDOM TYPE TABLE OF DD07V WITH HEADER LINE.
+
+"DEFINE RANGE
+RANGES : LR_RSTAT FOR ZAAST0010-RSTAT.
+RANGES : LR_RTYPE FOR ZAAST0010-RTYPE.
+
+"DEFINE MACRO
+DEFINE _SET_RSTAT.
+LR_RSTAT-SIGN = 'I'.
+LR_RSTAT-OPTION = 'EQ'.
+LR_RSTAT-LOW = &1.
+APPEND LR_RSTAT.
+CLEAR LR_RSTAT.
+END-OF-DEFINITION.
+
+DEFINE _SET_RTYPE.
+LR_RTYPE-SIGN = 'I'.
+LR_RTYPE-OPTION = 'EQ'.
+LR_RTYPE-LOW = &1.
+APPEND LR_RTYPE.
+CLEAR LR_RTYPE.
+END-OF-DEFINITION.
+
+*RB & CB  'X'  CHECK
+CASE 'X'.
+WHEN P_RB_ALL.
+_SET_RSTAT'1'.
+_SET_RSTAT '2'.
+
+WHEN P_RB_ACP.
+_SET_RSTAT'1'.
+
+WHEN P_RB_STD.
+_SET_RSTAT '2'.
+ENDCASE.
+
+IF P_CB_FR = 'X'.
+_SET_RTYPE'1'.
+ENDIF.
+
+IF P_CB_WL = 'X'.
+_SET_RTYPE'2'.
+ENDIF.
+
+IF P_CB_PP = 'X'.
+_SET_RTYPE'3'.
+ENDIF.
+
+IF P_CB_EL = 'X'.
+_SET_RTYPE'4'.
+ENDIF.
+
+IF P_CB_SS = 'X'.
+_SET_RTYPE'5'.
+ENDIF.
+
+SELECT RNUMB HNUMB ASSTT ASEND RTYPE RSTAT ASNUM
+INTO CORRESPONDING FIELDS OF TABLE GT_ASLIST
+FROM ZAAST0010
+WHERE RNUMB IN S_RNUMB
+AND HNUMB IN S_HNUMB
+AND ASSTT IN S_ASSTT
+AND RTYPE IN LR_RTYPE
+AND RSTAT IN LR_RSTAT
+AND DELFL EQ SPACE
+ORDER BY RNUMB DESCENDING.
+
+"도메인 텍스트 테이블 생성
+"도메인 Value RTDOM
+CALL FUNCTION 'DD_DOMVALUES_GET'
+EXPORTING
+DOMNAME = 'ZAD_RTYPE'
+LANGU = SY-LANGU
+TEXT = 'X'
+TABLES
+DD07V_TAB = LT_RTDOM
+EXCEPTIONS
+WRONG_TEXTFLAG = 1
+OTHERS = 2.
+
+"도메인 Value RSDOM
+CALL FUNCTION 'DD_DOMVALUES_GET'
+EXPORTING
+DOMNAME = 'ZAD_RSTAT'
+LANGU = SY-LANGU
+TEXT = 'X'
+TABLES
+DD07V_TAB = LT_RSDOM
+EXCEPTIONS
+WRONG_TEXTFLAG = 1
+OTHERS = 2.
+
+LOOP AT GT_ASLIST INTO GS_ASLIST.
+
+READ TABLE LT_RTDOM WITH KEY DOMVALUE_L = GS_ASLIST-RTYPE.
+IF SY-SUBRC EQ 0.
+GS_ASLIST-RTNAM = LT_RTDOM-DDTEXT.
+ENDIF.
+
+READ TABLE LT_RSDOM WITH KEY DOMVALUE_L = GS_ASLIST-RSTAT.
+IF SY-SUBRC EQ 0.
+GS_ASLIST-RSNAM = LT_RSDOM-DDTEXT.
+ENDIF.
+
+MODIFY GT_ASLIST FROM GS_ASLIST.
+
+ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INIT
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM INIT .
+S_ASSTT-HIGH = SY-DATUM + 15.
+S_ASSTT-LOW = SY-DATUM - 15.
+APPEND S_ASSTT.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CREATE_INSTANCE_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM CREATE_INSTANCE_0100 .
+
+CREATE OBJECT GR_CON1
+EXPORTING
+CONTAINER_NAME = GV_CONTAINER. " = CT_0100 으로 세팅해둠
+
+CREATE OBJECT GR_GRID1
+EXPORTING
+I_PARENT = GR_CON1. " PARENT 와 CHILD 관계 / GRID의 PARENT는 CON / CON의 CHILD는 ALV GRID
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form APPEND_FIELDCAT_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM APPEND_FIELDCAT_0100 .
+"{ FIELDCATLOG MERGE 사용
+"ALV에 표현할 FIELD모양을 가져오는 FORM
+PERFORM GET_FIELDCATLOG_DATA.
+"위 FORM에서 가져온 FIELD를 원하는대로 수정하는 FORM
+PERFORM MODIFY_FIELDCATLOG_DATA.
+"}
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form GET_FIELDCATLOG_DATA
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM GET_FIELDCATLOG_DATA .
+
+DATA: LT_FIELDCAT TYPE KKBLO_T_FIELDCAT.
+DATA: LV_TABNAME TYPE DD02L-TABNAME.
+
+LV_TABNAME = 'GS_ASLIST'. " 식사정보필드가 포함된 테이블
+
+CALL FUNCTION 'K_KKB_FIELDCAT_MERGE'
+EXPORTING
+I_CALLBACK_PROGRAM = SY-REPID
+I_TABNAME = LV_TABNAME "프로그램내 ITAB" 돌아오는 프로그램
+*      I_STRUCNAME            = 'ZEDU21_PRST' "ABAP DIC. 정의된 STRUCTURE "internel structure는 안됨.
+I_BYPASSING_BUFFER = ABAP_TRUE "버퍼를 갱신하여서 데이터변경이 바로 적용될 수 있도록 하는 항목
+I_INCLNAME = SY-REPID
+CHANGING
+CT_FIELDCAT = LT_FIELDCAT[]
+EXCEPTIONS
+INCONSISTENT_INTERFACE = 1
+OTHERS = 2.
+
+IF SY-SUBRC EQ 0.
+
+"-- Trasnfer LVC.
+CALL FUNCTION 'LVC_TRANSFER_FROM_KKBLO'
+EXPORTING
+IT_FIELDCAT_KKBLO = LT_FIELDCAT[]
+IMPORTING
+ET_FIELDCAT_LVC = GT_FIELDCAT[]
+EXCEPTIONS
+IT_DATA_MISSING = 1.
+ELSE.
+
+" Error Fieldcatalog merge!!
+MESSAGE E000 WITH 'Error Fieldcatalog merge!!'.
+
+ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form DISPLAY_ALV_GRID_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM DISPLAY_ALV_GRID_0100 .
+
+GS_VARIANT-REPORT = SY-REPID.
+
+GV_SAVE = 'A'. "ALV 옵션 저장 유무
+
+"*-- Build field catalog for the alv control
+CALL METHOD GR_GRID1->SET_TABLE_FOR_FIRST_DISPLAY "클래스가 가지고 있는 메소드 호출
+EXPORTING
+I_DEFAULT = ABAP_TRUE
+IS_LAYOUT = GS_LAYOUT
+IS_VARIANT = GS_VARIANT
+I_SAVE = GV_SAVE
+IT_TOOLBAR_EXCLUDING = GT_EXCLUDE "기능버튼 뺄때
+CHANGING
+IT_FIELDCATALOG = GT_FIELDCAT "GET_FIELDCAT 에서 가져온 필드정보
+IT_SORT = GT_SORT " 정렬값 설정가능(필드/차순)
+IT_OUTTAB = GT_ASLIST "화면에 뿌려질 데이터가 담긴 테이블 / 대괄호[] 헤더가 있는 테이블로
+EXCEPTIONS " 필드카탈로그를을 가져오는경우 대괄호로 테이블을 명시해주어야함
+INVALID_PARAMETER_COMBINATION = 1
+PROGRAM_ERROR = 2
+TOO_MANY_LINES = 3.
+
+IF SY-SUBRC NE 0.
+MESSAGE E000(0K) WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REFRESH_GRID_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM REFRESH_GRID_0100 .
+
+GS_STABLE-ROW = ABAP_TRUE. "Row
+GS_STABLE-COL = ABAP_TRUE. "column
+
+CALL METHOD GR_GRID1->REFRESH_TABLE_DISPLAY
+EXPORTING
+IS_STABLE = GS_STABLE
+I_SOFT_REFRESH = SPACE.
+
+CALL METHOD CL_GUI_CFW=>FLUSH.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form REGIST_ALV_EVENT_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> GR_GRID1
+*&---------------------------------------------------------------------*
+FORM REGIST_ALV_EVENT_0100 USING PR_GRID TYPE REF TO CL_GUI_ALV_GRID.
+
+*  REGISTER EVENT
+CALL METHOD PR_GRID->REGISTER_EDIT_EVENT
+EXPORTING
+I_EVENT_ID = CL_GUI_ALV_GRID=>MC_EVT_MODIFIED.
+
+*  CALL METHOD PR_GRID->SET_READY_FOR_INPUT
+*    EXPORTING
+*      I_READY_FOR_INPUT = 1.
+
+*-- GR_EVENT_RECEIVER
+IF GR_EVENT_RECEIVER IS INITIAL.
+CREATE OBJECT GR_EVENT_RECEIVER.
+ENDIF.
+
+* Handler Event
+SET HANDLER:
+*    GR_EVENT_RECEIVER->HANDLE_TOOLBAR   FOR ALL INSTANCES,
+*    GR_EVENT_RECEIVER->HANDLE_DATA_CHANGED  FOR ALL INSTANCES,
+*    GR_EVENT_RECEIVER->HANDLE_DATA_CHANGED_FINISHED
+*      FOR ALL INSTANCES,
+*    GR_EVENT_RECEIVER->HANDLE_USER_COMMAND  FOR ALL INSTANCES,
+*    GR_EVENT_RECEIVER->HANDLE_HOTSPOT_CLICK FOR ALL INSTANCES,
+GR_EVENT_RECEIVER->HANDLE_DOUBLE_CLICK FOR ALL INSTANCES.
+*    GR_EVENT_RECEIVER->HANDLE_ONF4          FOR ALL INSTANCES.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form EVENT_DOUBLE_CLICK
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> E_ROW
+*&      --> E_COLUMN
+*&      --> ES_ROW_NO
+*&      --> SENDER
+*&---------------------------------------------------------------------*
+FORM EVENT_DOUBLE_CLICK USING PS_ROW TYPE LVC_S_ROW
+PS_COLUMN TYPE LVC_S_COL
+PS_ROW_NO TYPE LVC_S_ROID
+PR_SENDER TYPE REF TO CL_GUI_ALV_GRID.
+
+DATA : LT_RTYPE TYPE TABLE OF DD07V WITH HEADER LINE.
+
+CASE PR_SENDER.
+WHEN GR_GRID1.
+
+READ TABLE GT_ASLIST INTO GS_ASLIST INDEX PS_ROW_NO-ROW_ID.
+IF SY-SUBRC EQ 0.
+
+*          SELECT A~RNUMB, A~CNUMB, A~HNUMB, C~HCODE, A~RDATE, A~ASSTT, A~ASEND, A~RTYPE, A~RTEXT, A~ASNUM
+*            INTO  @GS_ASDET
+*            FROM ZAAST0010 AS A
+*            INNER JOIN ZAPST0040 AS B ON A~HNUMB EQ B~HNUMB
+*            INNER JOIN ZAPST0050 AS C ON B~INSNO EQ C~INSNO
+*            WHERE A~RNUMB EQ @GS_ASLIST-RNUMB.
+*           ENDSELECT.
+
+SELECT RNUMB, CNUMB, HNUMB, RDATE, ASSTT, ASEND, RTYPE, RTEXT, ASNUM, RSTAT, RENUM
+INTO @GS_ASDET
+FROM ZAAST0010
+WHERE RNUMB EQ @GS_ASLIST-RNUMB.
+ENDSELECT.
+
+ENDIF.
+
+IF GS_ASDET IS INITIAL.
+
+GV_ERROR = 'X'.
+MESSAGE S001 DISPLAY LIKE 'E'.
+EXIT.
+
+ELSE.
+
+"도메인 Value FLTYPE
+CALL FUNCTION 'DD_DOMVALUES_GET'
+EXPORTING
+DOMNAME = 'ZAD_RTYPE'
+LANGU = SY-LANGU
+TEXT = 'X'
+TABLES
+DD07V_TAB = LT_RTYPE
+EXCEPTIONS
+WRONG_TEXTFLAG = 1
+OTHERS = 2.
+
+READ TABLE LT_RTYPE WITH KEY DOMVALUE_L = GS_ASDET-RTYPE.
+GS_ASDET-RTYPE_T = LT_RTYPE-DDTEXT.
+
+ENDIF.
+
+CALL SCREEN '0200'.
+
+ENDCASE.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form INIT_LAYOUT_0100
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM INIT_LAYOUT_0100 .
+GS_LAYOUT-EDIT_MODE = ABAP_TRUE. "편집 모드 ON
+GS_LAYOUT-ZEBRA = ABAP_TRUE. "ZEBRA기능 사용 / 2줄씩 색이 바뀌도록 함(흰/회)
+GS_LAYOUT-CWIDTH_OPT = ABAP_TRUE. "필드값 길이 자동 리사이징 / 타입보다 입력된 데이터의 길이에 맞춰서 조절
+GS_LAYOUT-SEL_MODE = 'B' ."A행/열 B단일라인만 선택가능 C복수/드래그로 여러개 선택가능 D셀 단위로 선택가능(좌측 열선택 체크칸 생김)
+GS_LAYOUT-NO_ROWMARK = 'X'. " A나 D의 체크박스를 없앰
+* GS_LAYOUT-KEHOT = 'X'. "KEY 필드들을 HOTSPOT으로 만듦
+* GS_LAYOUT-HEADERS = 'X'. " 헤더안보이게
+* GS_LAYOUT-HGRIDLN = 'X'. "GRID 수평선이 안보이게
+* GS_LAYOUT-NO-MERGING = 'X'. " 칼럼이 정렬되면 같은 값들은 한셀로 병합되는데 그것을 막는 옵션
+* GS_LAYOUT-CTAB_FNAME =
+GS_LAYOUT-INFO_FNAME = 'LCOLOR'.
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CHECK_EN
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM CHECK_EN .
+DATA : LT_ZAAST0010 TYPE TABLE OF ZAAST0010 WITH HEADER LINE.
+DATA : LT_ENUMB LIKE TABLE OF GS_ENUMB WITH HEADER LINE.
+DATA : LT_EXLEV TYPE TABLE OF DD07V WITH HEADER LINE.
+RANGES : LR_ASDATE FOR ZAASS0090_EX-ASSTT.
+
+DEFINE _SET_ASDATE.
+LR_ASDATE-SIGN = 'I'.
+LR_ASDATE-OPTION = 'BT'.
+LR_ASDATE-LOW = &1.
+LR_ASDATE-HIGH = &2.
+APPEND LR_ASDATE.
+CLEAR LR_ASDATE.
+END-OF-DEFINITION.
+
+_SET_ASDATE GS_ASDET-ASSTT GS_ASDET-ASEND.
+
+CLEAR : GT_ENUMB.
+
+SELECT ENUMB ENAME EXLEV
+INTO TABLE LT_ENUMB
+FROM ZAPST0020
+WHERE DEPART EQ 'AS'.
+
+LOOP AT LT_ENUMB.
+
+SELECT *
+APPENDING CORRESPONDING FIELDS OF TABLE LT_ZAAST0010
+FROM ZAAST0010
+WHERE ASNUM EQ LT_ENUMB-ENUMB
+AND ( ASSTT IN LR_ASDATE OR ASEND IN LR_ASDATE ).
+
+IF LT_ZAAST0010[] IS INITIAL.
+MOVE-CORRESPONDING LT_ENUMB TO GS_ENUMB.
+APPEND GS_ENUMB TO GT_ENUMB.
+ENDIF.
+
+CLEAR : LT_ZAAST0010[].
+
+ENDLOOP.
+
+"도메인 Value EXLEV
+CALL FUNCTION 'DD_DOMVALUES_GET'
+EXPORTING
+DOMNAME = 'ZAD_EXLEV'
+LANGU = SY-LANGU
+TEXT = 'X'
+TABLES
+DD07V_TAB = LT_EXLEV
+EXCEPTIONS
+WRONG_TEXTFLAG = 1
+OTHERS = 2.
+
+LOOP AT GT_ENUMB INTO GS_ENUMB.
+READ TABLE LT_EXLEV WITH KEY DOMVALUE_L = GS_ENUMB-EXLEV.
+GS_ENUMB-EXNAM = LT_EXLEV-DDTEXT.
+
+MODIFY GT_ENUMB FROM GS_ENUMB.
+CLEAR : GS_ENUMB.
+ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form MODIFY_FIELDCATLOG_DATA
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM MODIFY_FIELDCATLOG_DATA .
+DATA: LV_TEXT(50)."길이 50자
+"--- Change Fieldcat.
+LOOP AT GT_FIELDCAT INTO GS_FIELDCAT.
+CLEAR: LV_TEXT.
+
+"-- Change fieldcat Attribute
+CASE GS_FIELDCAT-FIELDNAME.
+WHEN 'RTYPE'.
+GS_FIELDCAT-NO_OUT = ABAP_TRUE.
+
+WHEN 'RSTAT'.
+GS_FIELDCAT-NO_OUT = ABAP_TRUE.
+*        GS_FIELDCAT-KEY = ABAP_TRUE. " 키값으로 지정 / 키값은 ALV에서 스크롤이 이동해도 고정되서 보임 / 지정안해도 기존 테이블 키값은 키로 설정
+*        GS_FIELDCAT-JUST = 'L'. "정렬 / L/C/R - 왼/중/오
+*        GS_FIELDCAT-HOTSPOT = ABAP_TRUE. "마우스를 가져다대면 손모양 아이콘으로 바뀜(링크를 거는 듯한)
+*        GS_FIELDCAT-EMPHASIZE = 'C310'. "셀강조 - 컬러코드/색으로 강조 EX) C310 노란색
+
+WHEN OTHERS.
+*        GS_FIELDCAT-NO_OUT = ABAP_TRUE. " NO_OUT 미출력 체크
+*        GS_FIELDCAT-OUTPUTLEN = 'X'. "출력길이 조절 / 보다 아래의 COL_OPT 많이 사용
+ENDCASE.
+"Column Optimizer
+GS_FIELDCAT-COL_OPT = ABAP_TRUE. " 필드값 길이 자동 리사이징 / 타입보다 입력된 데이터의 길이에 맞춰서 조절
+GS_FIELDCAT-JUST = 'C'. "중앙정렬
+"-- Common attribute
+IF LV_TEXT IS NOT INITIAL. " 값이 있으면
+GS_FIELDCAT-COLTEXT = LV_TEXT. "필드라벨 짧음
+GS_FIELDCAT-SCRTEXT_L = LV_TEXT. "필드라벨 중간
+GS_FIELDCAT-SCRTEXT_M = LV_TEXT. "필드라벨 긴
+GS_FIELDCAT-SCRTEXT_S = LV_TEXT. "필드라벨 헤딩
+ENDIF.
+
+MODIFY GT_FIELDCAT FROM GS_FIELDCAT.
+ENDLOOP.
+ENDFORM.
+Extracted by Mass Download version1.5.2 - E.G.Mellodew. 1998-2019. Sap Release753

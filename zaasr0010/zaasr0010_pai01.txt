@@ -1,0 +1,151 @@
+
+Code listing for:ZAASR0010_PAI01
+Description:Include ZAASR0010_PAI01
+*&---------------------------------------------------------------------*
+*& Include          ZAASR0010_PAI01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE USER_COMMAND_0100 INPUT.
+
+CLEAR : SAVE_OK.
+
+SAVE_OK = OK_CODE. "OK_CODE가 남아있어 변경되지 않는 경우를 방지하기 위하여 따로 SAVE_OK에 담아서 사용
+CLEAR : OK_CODE. "OK_CODE에 데이터가 남아 생기는 오류를 막기위해 클리어
+
+CASE SAVE_OK.
+WHEN 'BACK'.
+LEAVE TO SCREEN 0. " 전 단계 화면으로 이동
+
+WHEN OTHERS.
+ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE EXIT_0100 INPUT.
+
+CASE OK_CODE.
+WHEN 'CANC'.
+LEAVE TO SCREEN 0.
+
+WHEN 'EXIT'.
+LEAVE PROGRAM. "프로그램 종료
+WHEN OTHERS.
+ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE USER_COMMAND_0200 INPUT.
+DATA : LV_LINE TYPE P,
+LV_CLINE TYPE P,
+LT_ZAAST0010 TYPE TABLE OF ZAAST0010.
+
+
+CLEAR : SAVE_OK.
+
+SAVE_OK = OK_CODE. "OK_CODE가 남아있어 변경되지 않는 경우를 방지하기 위하여 따로 SAVE_OK에 담아서 사용
+CLEAR : OK_CODE. "OK_CODE에 데이터가 남아 생기는 오류를 막기위해 클리어
+
+CASE SAVE_OK.
+WHEN 'BACK'.
+CLEAR : GT_ENUMB[].
+LEAVE TO SCREEN 0.
+
+WHEN 'SEARCH'.
+
+IF GS_ASDET-ASSTT > GS_ASDET-ASEND.
+
+MESSAGE E003 DISPLAY LIKE 'E'.
+
+ELSE.
+
+PERFORM CHECK_EN.
+
+ENDIF.
+
+WHEN 'DEL'.
+GS_ASDET-ASNUM =''.
+
+WHEN 'CLICK'.
+LV_CLINE = ZTB_CONT-CURRENT_LINE - 1.
+GET CURSOR LINE LV_LINE.
+LV_LINE = LV_LINE + LV_CLINE.
+READ TABLE GT_ENUMB INTO GS_ENUMB INDEX LV_LINE.
+GS_ASDET-ASNUM = GS_ENUMB-ENUMB.
+
+WHEN 'SAVE'.
+
+IF GS_ASDET-ASEND IS NOT INITIAL AND GS_ASDET-ASNUM IS NOT INITIAL.
+IF GS_ASDET-ASSTT > GS_ASDET-ASEND.
+
+MESSAGE E003 DISPLAY LIKE 'E'.
+
+ELSE.
+
+GS_ASDET-RSTAT = '2'.
+UPDATE ZAAST0010 SET ASEND = GS_ASDET-ASEND
+ASNUM = GS_ASDET-ASNUM
+RSTAT = GS_ASDET-RSTAT
+WHERE RNUMB = GS_ASDET-RNUMB.
+PERFORM SEARCH.
+PERFORM REFRESH_GRID_0100.
+LEAVE TO SCREEN 0.
+
+ENDIF.
+
+ELSE.
+
+IF GS_ASDET-ASEND IS INITIAL AND GS_ASDET-ASNUM IS INITIAL.
+
+GS_ASDET-RSTAT = '1'.
+UPDATE ZAAST0010 SET ASEND = GS_ASDET-ASEND
+ASNUM = GS_ASDET-ASNUM
+RSTAT = GS_ASDET-RSTAT
+WHERE RNUMB = GS_ASDET-RNUMB.
+PERFORM SEARCH.
+PERFORM REFRESH_GRID_0100.
+LEAVE TO SCREEN 0.
+
+ELSE.
+
+MESSAGE E002 DISPLAY LIKE 'E'.
+EXIT.
+
+ENDIF.
+
+ENDIF.
+
+WHEN OTHERS.
+
+ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  EXIT_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE EXIT_0200 INPUT.
+
+CASE OK_CODE.
+WHEN 'CANC'.
+LEAVE TO SCREEN 0.
+
+WHEN 'EXIT'.
+LEAVE PROGRAM. "프로그램 종료
+WHEN OTHERS.
+ENDCASE.
+
+ENDMODULE.
+Extracted by Mass Download version1.5.2 - E.G.Mellodew. 1998-2019. Sap Release753
